@@ -188,7 +188,7 @@ export default function TerminalDemo() {
   const [stepIdx, setStepIdx] = useState(0);
   const [fade,    setFade]    = useState(true);
   const [demoBg,  setDemoBg]  = useState(true);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const demo = DEMOS[demoIdx];
   const step = demo.steps[stepIdx];
