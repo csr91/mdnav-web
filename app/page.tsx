@@ -7,7 +7,7 @@ import FeatureGrid from "@/components/FeatureGrid";
 
 const content = {
   en: {
-    kicker: "open source · rust · v0.1.8",
+    kicker: "open source · rust",
     subtitle: "A keyboard-driven file explorer for the terminal. Browse any directory, preview files as you navigate, manage your repo and share diagrams — all without touching the mouse.",
     cta: { primary: "Get started", secondary: "Documentation →" },
     featuresLabel: "Features",
@@ -27,7 +27,7 @@ const content = {
     install: { windows: "Windows", linux: "Linux / macOS" },
   },
   es: {
-    kicker: "código abierto · rust · v0.1.8",
+    kicker: "código abierto · rust",
     subtitle: "Un explorador de archivos para la terminal con control total por teclado. Navegá cualquier directorio, previsualizá archivos en tiempo real, gestioná tu repo y compartí diagramas — sin tocar el mouse.",
     cta: { primary: "Empezar", secondary: "Documentación →" },
     featuresLabel: "Funcionalidades",
@@ -60,11 +60,17 @@ export default function HomePage() {
   const [lang, setLang] = useState<Lang>("en");
   const [active, setActive] = useState("hero");
   const [stars, setStars] = useState<number | null>(null);
+  const [version, setVersion] = useState("v0.1.8");
 
   useEffect(() => {
     fetch("https://api.github.com/repos/csr91/mdnav")
       .then(r => r.json())
       .then(d => setStars(d.stargazers_count ?? null))
+      .catch(() => {});
+
+    fetch("https://api.github.com/repos/csr91/mdnav/releases/latest")
+      .then(r => r.json())
+      .then(d => { if (d.tag_name) setVersion(d.tag_name); })
       .catch(() => {});
   }, []);
 
@@ -116,7 +122,7 @@ export default function HomePage() {
         </div>
 
         {/* Version label */}
-        <span className="shell-version">v0.1.8</span>
+        <span className="shell-version">{version}</span>
 
         {/* Hero */}
         <section id="hero" className="hero">
