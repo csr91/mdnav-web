@@ -18,9 +18,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at top, rgba(119, 198, 255, 0.14), transparent 35%),
-    linear-gradient(180deg, #0b1015 0%, #0a0f14 100%);
+  background: linear-gradient(180deg, #0b1015 0%, #0a0f14 100%);
   color: var(--text);
   font-family: Consolas, "SFMono-Regular", Menlo, Monaco, monospace;
 }
@@ -80,12 +78,7 @@ a {
 }
 
 .hero::before {
-  content: '';
-  position: absolute;
-  inset: -24px -24px 0;
-  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(119, 198, 255, 0.10) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: -1;
+  content: none;
 }
 
 .kicker {
@@ -97,9 +90,18 @@ a {
 
 .title {
   margin: 0;
-  font-size: clamp(48px, 8vw, 88px);
+  font-family: var(--font-title), sans-serif;
+  font-size: clamp(56px, 9vw, 104px);
   line-height: 0.92;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
+}
+
+.shell-version {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .title-gradient {
@@ -217,6 +219,29 @@ a {
   margin-bottom: 14px;
 }
 
+.platform-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.platform-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.hero-oneliner {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
 .divider {
   border: none;
   height: 1px;
@@ -272,12 +297,48 @@ a {
   color: var(--text);
 }
 
+.btn-github-stars {
+  padding: 1px 7px;
+  margin-left: 2px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  color: var(--accent);
+}
+
 /* ── landing page layout ────────────────────────────────── */
+
+.lp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.lp-topbar-links {
+  display: flex;
+  gap: 20px;
+}
+
+.lp-topbar-link {
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.lp-topbar-link:hover {
+  color: var(--text);
+}
+
+.lp-topbar-link.active {
+  color: var(--accent);
+}
 
 .lp-nav {
   position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 24px;
   left: 20px;
   width: 96px;
   padding: 14px 10px;
@@ -461,6 +522,10 @@ a {
   border-color: rgba(255,255,255,0.15);
 }
 
+.tdem-shell-prompt {
+  color: var(--accent-2);
+}
+
 .tdem-hint {
   display: inline-flex;
   align-items: center;
@@ -514,6 +579,24 @@ a {
 .tdem-browser-content svg {
   max-height: 240px;
   width: auto;
+}
+
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.site-footer a {
+  color: var(--text);
+  transition: color 0.15s;
+}
+
+.site-footer a:hover {
+  color: var(--accent);
 }
 
 /* ── docs layout ────────────────────────────────────────── */

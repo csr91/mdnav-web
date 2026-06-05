@@ -13,6 +13,8 @@ type Step = {
   mermaid?: boolean;
   splitClass?: string;
   selLines?: number[];
+  expand?: boolean;
+  shell?: boolean;
 };
 type Demo = { label: string; steps: Step[] };
 
@@ -63,9 +65,8 @@ const P_TS       = ["{", '  "compilerOptions": {', '    "target": "ES2017",', ' 
 const P_ARCH     = ["# Architecture", "", "## Frontend", "  Next.js + TypeScript", "", "## Backend", "  API routes + MongoDB", "", "## Deploy", "  Vercel"];
 const P_DIAG     = ["# diagram.md", "", "```mermaid", "flowchart TD", "  A[User] --> B[mdnav]", "  B --> C[Preview]", "  B --> D[Git]", "  B --> E[Share]", "  E --> F[Link]", "```"];
 const P_MACTIONS = ["─ Mermaid ─────────────────────", "", "  1  Preview in terminal", "  2  Open as HTML", "▶ 3  Share link", "", "  ↵ confirm   Esc dismiss"];
-const P_LINK     = ["✓ Link ready", "", "  https://mdnav.app/a1b2c3", "", "  Opens in browser.", "  Expires after first view.", "", "  ✓ Copied to clipboard"];
 const P_API      = ["# API Reference", "", "## POST /api/diagrams/:hash", "", "  Body: { mermaid,", "    html?, title?,", "    ttlSeconds? }", "", "  Returns: { ok, hash, url }"];
-const P_MAIN_GO  = ["package main", "", "import (", '  "fmt"', '  "net/http"', ")", "", "func main() {", "  http.HandleFunc(\"/\",", "    handler)", '  fmt.Println("Listening")', "  http.ListenAndServe(", '    ":8080", nil)', "}"];
+const P_BACKEND_SHELL = ["~/work/backend $", "", "  api/       models/     services/", "  main.go    go.mod      README.md", "", "~/work/backend $ █"];
 
 // ── Demo 1: Navigate + Mermaid share ─────────────────────
 const DEMO_NAV: Step[] = [
@@ -77,8 +78,7 @@ const DEMO_NAV: Step[] = [
   { tree: DOCS_OPEN,  selected: "docs-arch", preview: P_ARCH,     hint: "j",       delay: 1600 },
   { tree: DOCS_OPEN,  selected: "docs-diag", preview: P_DIAG,     hint: "j",       delay: 2000 },
   { tree: DOCS_OPEN,  selected: "docs-diag", preview: P_MACTIONS, hint: "Shift+M", delay: 1600 },
-  { tree: DOCS_OPEN,  selected: "docs-diag", preview: P_LINK,     hint: "↵",       delay: 1400 },
-  { tree: DOCS_OPEN,  selected: "docs-diag", preview: [],         hint: "",        delay: 3200, mermaid: true },
+  { tree: DOCS_OPEN,  selected: "docs-diag", preview: [],         hint: "↵",       delay: 3200, mermaid: true },
   { tree: COLLAPSED,  selected: "rdme",      preview: P_README,   hint: "h",       delay: 900  },
 ];
 
@@ -94,15 +94,15 @@ const DEMO_EDIT: Step[] = [
     preview: [": edit █", "", "▶ edit README.md", "  edit package.json", "  edit tsconfig.json"],
   },
   {
-    tree: COLLAPSED, selected: "rdme", hint: "↵", delay: 2400,
+    tree: COLLAPSED, selected: "rdme", hint: "↵", delay: 2400, expand: true,
     preview: ["── VIM · INSERT ─────────────────", "# myapp", "", "A full-stack web application█", "built with Next.js and TypeScript.", "", "## Getting started", "", "  npm install", "  npm run dev", "~", "~", '"README.md" 12L, 245B'],
   },
   {
-    tree: COLLAPSED, selected: "rdme", hint: ":wq", delay: 1000,
+    tree: COLLAPSED, selected: "rdme", hint: ":wq", delay: 1000, expand: true,
     preview: [": wq█", "", "  write and quit"],
   },
   {
-    tree: COLLAPSED, selected: "rdme", hint: "↵", delay: 1000,
+    tree: COLLAPSED, selected: "rdme", hint: "↵", delay: 1000, expand: true,
     preview: ['"README.md" written, 245 bytes'],
   },
   { tree: COLLAPSED, selected: "rdme", preview: P_README, hint: "", delay: 1200 },
@@ -124,8 +124,7 @@ const DEMO_RENAME: Step[] = [
     tree: DOCS_RENAMED, selected: "docs-api-v2", hint: ":goto", delay: 1600,
     preview: [": goto █", "", "▶ ~/work/backend", "  ~/projects/myapp", "  ~/personal/notes", "  ~/docs", "", "  ↵ navigate   Esc dismiss"],
   },
-  { tree: BACKEND, selected: "main",    preview: P_MAIN_GO, hint: "↵",   delay: 2200 },
-  { tree: BACKEND, selected: "be-rdme", preview: P_README,  hint: "j j", delay: 1800 },
+  { tree: BACKEND, selected: "main", preview: P_BACKEND_SHELL, shell: true, hint: "↵", delay: 2800 },
 ];
 
 // ── Demo 4: Split + Shift+Y selection ────────────────────
@@ -216,7 +215,7 @@ export default function TerminalDemo() {
 
   const bodyClass = [
     "tdem-body",
-    step.mermaid    ? "tdem-full"      : "",
+    (step.mermaid || step.expand || step.shell) ? "tdem-full" : "",
     step.splitClass ?? "",
   ].filter(Boolean).join(" ");
 
@@ -260,7 +259,11 @@ export default function TerminalDemo() {
             step.preview.map((line, i) => (
               <div
                 key={i}
-                className={`tdem-preview-line${step.selLines?.includes(i) ? " tdem-sel-line" : ""}`}
+                className={[
+                  "tdem-preview-line",
+                  step.selLines?.includes(i) ? "tdem-sel-line" : "",
+                  step.shell && (line.startsWith("~/") || line.startsWith("$")) ? "tdem-shell-prompt" : "",
+                ].filter(Boolean).join(" ")}
               >
                 {line || " "}
               </div>
