@@ -89,9 +89,13 @@ export async function POST(request: NextRequest) {
     return unauthorized();
   }
 
+  const rawBody = await request.text();
+  // TODO: sacar este log una vez que confirmemos el shape real del payload de Treble.
+  console.log("[treble-webhook] raw payload:", rawBody);
+
   let event: TrebleWebhookEvent;
   try {
-    event = (await request.json()) as TrebleWebhookEvent;
+    event = JSON.parse(rawBody) as TrebleWebhookEvent;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
@@ -100,7 +104,7 @@ export async function POST(request: NextRequest) {
   const conversationId = event.conversation_id ?? event.contact_id;
 
   if (!cardNumber || !conversationId) {
-    return NextResponse.json({ error: "missing_fields" }, { status: 400 });
+    return NextResponse.json({ ok: true, note: "logged_only_missing_fields" });
   }
 
   const { balance } = await fetchPago24Balance(cardNumber);
