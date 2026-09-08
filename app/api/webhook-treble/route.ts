@@ -50,6 +50,8 @@ async function fetchPago24Balance(cardNumber: string): Promise<Pago24Balance> {
   });
 
   if (!response.ok) {
+    const body = await response.text();
+    console.log("[treble-webhook] pago24 error body:", body);
     throw new Error(`pago24 respondió ${response.status}`);
   }
 
