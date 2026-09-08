@@ -25,6 +25,7 @@ const content = {
       { icon: "◉", label: "Focus mode",        title: "Only .md files.",              desc: "Toggle .md-only view to filter the tree down to Markdown files exclusively. Less noise, faster navigation." },
     ],
     install: { windows: "Windows", linux: "Linux / macOS" },
+    oneliner: "You're already in the terminal. Why open Explorer or Finder?",
   },
   es: {
     kicker: "código abierto · rust",
@@ -45,6 +46,7 @@ const content = {
       { icon: "◉", label: "Modo enfocado",       title: "Solo archivos .md.",             desc: "Activá la vista solo-.md para filtrar el árbol y mostrar únicamente Markdown. Menos ruido, navegación más rápida." },
     ],
     install: { windows: "Windows", linux: "Linux / macOS" },
+    oneliner: "Ya estás en la terminal. ¿Para qué abrir Explorer o Finder?",
   },
 } as const;
 
@@ -56,11 +58,28 @@ const NAV_SECTIONS = [
   { id: "install",  labelKey: "install"  as const },
 ];
 
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  };
+  return (
+    <button className="copy-btn" onClick={copy} title="Copy to clipboard">
+      {copied ? "✓ copied" : "⎘ copy"}
+    </button>
+  );
+}
+
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>("en");
   const [active, setActive] = useState("hero");
   const [stars, setStars] = useState<number | null>(null);
   const [version, setVersion] = useState("v0.1.8");
+  const [featuresVisible, setFeaturesVisible] = useState(false);
+  const featuresRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     fetch("https://api.github.com/repos/csr91/mdnav")
@@ -91,6 +110,16 @@ export default function HomePage() {
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!featuresRef.current) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setFeaturesVisible(true); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    obs.observe(featuresRef.current);
+    return () => obs.disconnect();
   }, []);
 
   const toggle = (l: Lang) => {
@@ -150,14 +179,22 @@ export default function HomePage() {
             <span className="platform-badge">✓ macOS</span>
           </div>
 
-          <p className="hero-oneliner">You&apos;re already in the terminal. Why open Explorer or Finder?</p>
+          <p className="hero-oneliner">{t.oneliner}</p>
           <TerminalDemo />
         </section>
 
         <hr className="divider" />
 
         {/* Features */}
-        <section id="features">
+        <section
+          id="features"
+          ref={featuresRef}
+          style={{
+            opacity: featuresVisible ? 1 : 0,
+            transform: featuresVisible ? "translateY(0)" : "translateY(20px)",
+            transition: "opacity 0.6s ease, transform 0.6s ease",
+          }}
+        >
           <p className="section-label">{t.featuresLabel}</p>
           <FeatureGrid features={t.features} />
         </section>
@@ -170,11 +207,17 @@ export default function HomePage() {
           <div className="grid">
             <div className="card">
               <p className="muted" style={{ margin: "0 0 10px", fontSize: "13px" }}>{t.install.windows}</p>
-              <pre className="code">irm https://raw.githubusercontent.com/csr91/mdnav/master/install.ps1 | iex</pre>
+              <div className="code-wrap">
+                <pre className="code">irm https://raw.githubusercontent.com/csr91/mdnav/master/install.ps1 | iex</pre>
+                <CopyBtn text="irm https://raw.githubusercontent.com/csr91/mdnav/master/install.ps1 | iex" />
+              </div>
             </div>
             <div className="card">
               <p className="muted" style={{ margin: "0 0 10px", fontSize: "13px" }}>{t.install.linux}</p>
-              <pre className="code">curl -fsSL https://raw.githubusercontent.com/csr91/mdnav/master/install.sh | bash</pre>
+              <div className="code-wrap">
+                <pre className="code">curl -fsSL https://raw.githubusercontent.com/csr91/mdnav/master/install.sh | bash</pre>
+                <CopyBtn text="curl -fsSL https://raw.githubusercontent.com/csr91/mdnav/master/install.sh | bash" />
+              </div>
             </div>
           </div>
         </section>
@@ -190,7 +233,7 @@ export default function HomePage() {
             </a>{" "}
             open source project
           </span>
-          <span>Created by César Mendoza</span>
+          <span>Created by Cesar Mendoza</span>
         </footer>
 
       </main>

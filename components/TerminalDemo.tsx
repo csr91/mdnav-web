@@ -251,7 +251,7 @@ export default function TerminalDemo() {
                 <span className="tdem-browser-dot" style={{ background: "#ff5f57" }} />
                 <span className="tdem-browser-dot" style={{ background: "#febc2e" }} />
                 <span className="tdem-browser-dot" style={{ background: "#28c840" }} />
-                <span style={{ marginLeft: 6 }}>mdnav.app/a1b2c3</span>
+                <span style={{ marginLeft: 6 }}>{typeof window !== "undefined" ? window.location.hostname : ""}/a1b2c3</span>
               </div>
               <div className="tdem-browser-content"><DiagramSVG /></div>
             </div>

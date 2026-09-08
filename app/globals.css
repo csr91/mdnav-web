@@ -683,6 +683,34 @@ a {
   text-align: center;
 }
 
+/* ── copy button ─────────────────────────────────────────── */
+
+.code-wrap {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(119, 198, 255, 0.08);
+  border: 1px solid rgba(119, 198, 255, 0.18);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+
+.copy-btn:hover {
+  color: var(--accent);
+  background: rgba(119, 198, 255, 0.14);
+  border-color: rgba(119, 198, 255, 0.3);
+}
+
 /* ── responsive ─────────────────────────────────────────── */
 
 @media (max-width: 640px) {
