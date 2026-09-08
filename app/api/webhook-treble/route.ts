@@ -17,14 +17,13 @@ interface Pago24Balance {
 }
 
 interface TrebleWebhookEvent {
-  // TODO: confirmar contra el payload real de Treble.
-  // Estos son los campos que necesitamos: el número de tarjeta capturado
-  // como variable, y el identificador de conversación/contacto para responder.
-  contact_id?: string;
-  conversation_id?: string;
-  variables?: {
-    nro_tarjeta?: string;
-  };
+  // Shape real confirmado en logs de Vercel el 2026-09-08.
+  country_code?: string;
+  cellphone?: string;
+  business_scope_id?: string;
+  conversation_id?: number;
+  session_id?: string;
+  user_session_keys?: Array<{ key: string; value: string; type: string | null }>;
 }
 
 function unauthorized() {
@@ -57,30 +56,29 @@ async function fetchPago24Balance(cardNumber: string): Promise<Pago24Balance> {
   return response.json();
 }
 
-async function replyToTreble(conversationId: string, text: string) {
-  // TODO: confirmar contra la Messages API real de Treble
-  // (URL, auth header, y el nombre del campo destinatario).
-  const url = process.env.TREBLE_SEND_MESSAGE_URL;
+async function updateTrebleSession(sessionId: string, key: string, value: string) {
+  // Doc: https://help.treble.ai/es/api-reference/endpoints/session-update
+  // Esto no "envía un mensaje" — actualiza una variable de sesión y Treble
+  // continúa el flujo, que debe tener un bloque de mensaje mostrando {{key}}.
   const apiKey = process.env.TREBLE_API_KEY;
 
-  if (!url || !apiKey) {
-    throw new Error("Falta configurar TREBLE_SEND_MESSAGE_URL / TREBLE_API_KEY");
+  if (!apiKey) {
+    throw new Error("Falta configurar TREBLE_API_KEY");
   }
 
-  const response = await fetch(url, {
+  const response = await fetch(`https://main.treble.ai/session/${sessionId}/update`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
+      Authorization: apiKey
     },
     body: JSON.stringify({
-      conversation_id: conversationId,
-      text
+      user_session_keys: [{ key, value }]
     })
   });
 
   if (!response.ok) {
-    throw new Error(`Treble Messages API respondió ${response.status}`);
+    throw new Error(`Treble session-update respondió ${response.status}`);
   }
 }
 
@@ -90,7 +88,6 @@ export async function POST(request: NextRequest) {
   }
 
   const rawBody = await request.text();
-  // TODO: sacar este log una vez que confirmemos el shape real del payload de Treble.
   console.log("[treble-webhook] raw payload:", rawBody);
 
   let event: TrebleWebhookEvent;
@@ -100,15 +97,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const cardNumber = event.variables?.nro_tarjeta;
-  const conversationId = event.conversation_id ?? event.contact_id;
+  const cardNumber = event.user_session_keys?.find((k) => k.key === "nro_tarjeta")?.value;
+  const sessionId = event.session_id;
+  console.log("[treble-webhook] extracted:", { cardNumber, sessionId });
 
-  if (!cardNumber || !conversationId) {
-    return NextResponse.json({ ok: true, note: "logged_only_missing_fields" });
+  if (!cardNumber || !sessionId) {
+    return NextResponse.json({ ok: true, note: "missing_fields" });
   }
 
   const { balance } = await fetchPago24Balance(cardNumber);
-  await replyToTreble(conversationId, `Tu saldo es $${balance.balancePeso}`);
+  await updateTrebleSession(sessionId, "saldo", String(balance.balancePeso));
 
   return NextResponse.json({ ok: true });
 }
