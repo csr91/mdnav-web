@@ -1,31 +1,41 @@
 import { Collection, Db, Document, MongoClient } from "mongodb";
 import "server-only";
 
+export type ShareKind = "mermaid" | "html" | "text" | "log" | "csv" | "json" | "diff";
+
+const MAX_CONTENT_LENGTH = 1_000_000;
+
 export type DiagramRecord = {
   hash: string;
-  mermaid?: string;
-  html?: string;
+  kind: ShareKind;
+  content: string;
   title?: string;
   description?: string;
+  filename?: string;
   createdAt: string;
   expiresAt: string;
 };
 
 type DiagramDocument = {
   hash: string;
-  mermaid?: string;
-  html?: string;
+  kind: ShareKind;
+  content: string;
   title?: string;
   description?: string;
+  filename?: string;
   createdAt: Date;
   expiresAt: Date;
 } & Document;
 
 export type DiagramRecordInput = {
+  kind?: ShareKind;
+  content?: string;
+  // Legacy fields, kept for CLIs older than the generalized share endpoint.
   mermaid?: string;
   html?: string;
   title?: string;
   description?: string;
+  filename?: string;
   ttlSeconds?: number;
 };
 
@@ -81,6 +91,26 @@ function resolveExpiration(ttlSeconds?: number) {
   return new Date(Date.now() + bounded * 1000);
 }
 
+/**
+ * Normalizes the request body into a {kind, content} pair. Accepts the
+ * generalized shape directly, and falls back to the legacy mermaid/html
+ * fields for CLIs built before the share endpoint was generalized.
+ */
+export function normalizeShareInput(
+  input: DiagramRecordInput
+): { kind: ShareKind; content: string } | null {
+  if (input.kind && input.content?.trim()) {
+    return { kind: input.kind, content: input.content };
+  }
+  if (input.html?.trim()) {
+    return { kind: "html", content: input.html };
+  }
+  if (input.mermaid?.trim()) {
+    return { kind: "mermaid", content: input.mermaid };
+  }
+  return null;
+}
+
 export async function peekDiagram(hash: string): Promise<DiagramRecord | null> {
   const safeHash = sanitizeHash(hash);
   if (!safeHash) {
@@ -117,27 +147,33 @@ export async function putDiagram(hash: string, input: DiagramRecordInput): Promi
     throw new Error("Invalid hash");
   }
 
-  if (!input.html?.trim() && !input.mermaid?.trim()) {
-    throw new Error("Either html or mermaid is required");
+  const normalized = normalizeShareInput(input);
+  if (!normalized) {
+    throw new Error("Either kind+content, html or mermaid is required");
+  }
+  if (normalized.content.length > MAX_CONTENT_LENGTH) {
+    throw new Error("Content too large");
   }
 
   const expiresAt = resolveExpiration(input.ttlSeconds);
   const record: DiagramRecord = {
     hash: safeHash,
-    mermaid: input.mermaid?.trim() || undefined,
-    html: input.html?.trim() || undefined,
+    kind: normalized.kind,
+    content: normalized.content,
     title: input.title?.trim() || undefined,
     description: input.description?.trim() || undefined,
+    filename: input.filename?.trim() || undefined,
     createdAt: new Date().toISOString(),
     expiresAt: expiresAt.toISOString()
   };
 
   const document: DiagramDocument = {
     hash: record.hash,
-    mermaid: record.mermaid,
-    html: record.html,
+    kind: record.kind,
+    content: record.content,
     title: record.title,
     description: record.description,
+    filename: record.filename,
     createdAt: new Date(record.createdAt),
     expiresAt
   };
@@ -155,10 +191,11 @@ export async function putDiagram(hash: string, input: DiagramRecordInput): Promi
 function toRecord(doc: DiagramDocument): DiagramRecord {
   return {
     hash: doc.hash,
-    mermaid: doc.mermaid,
-    html: doc.html,
+    kind: doc.kind,
+    content: doc.content,
     title: doc.title,
     description: doc.description,
+    filename: doc.filename,
     createdAt: doc.createdAt.toISOString(),
     expiresAt: doc.expiresAt.toISOString()
   };

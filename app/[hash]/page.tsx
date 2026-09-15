@@ -1,8 +1,17 @@
 import { notFound } from "next/navigation";
 
-import MermaidViewer from "@/components/MermaidViewer";
-import { sanitizeStoredHtml } from "@/lib/html";
-import { consumeDiagram } from "@/lib/storage";
+import ShareViewer from "@/components/ShareViewer";
+import { consumeDiagram, type ShareKind } from "@/lib/storage";
+
+const DEFAULT_TITLES: Record<ShareKind, string> = {
+  mermaid: "Shared Mermaid",
+  html: "Shared HTML",
+  text: "Shared text",
+  log: "Shared log",
+  csv: "Shared CSV",
+  json: "Shared JSON",
+  diff: "Shared diff"
+};
 
 export default async function DiagramPage({
   params
@@ -16,36 +25,31 @@ export default async function DiagramPage({
     notFound();
   }
 
+  // Legacy records (stored before the share endpoint was generalized) may
+  // not have kind/content set — fall back to their old mermaid/html fields.
+  const legacy = diagram as typeof diagram & { mermaid?: string; html?: string };
+  const kind: ShareKind = diagram.kind ?? (legacy.html ? "html" : "mermaid");
+  const content = diagram.content ?? legacy.html ?? legacy.mermaid ?? "";
+
   return (
     <main className="shell">
       <div className="meta">
         <span className="badge">hash: {hash}</span>
         <span className="badge">created: {new Date(diagram.createdAt).toLocaleString()}</span>
+        {diagram.filename ? <span className="badge">{diagram.filename}</span> : null}
       </div>
 
       <section className="card">
-        <h1>{diagram.title ?? "Shared Mermaid"}</h1>
+        <h1>{diagram.title ?? DEFAULT_TITLES[kind]}</h1>
         {diagram.description ? <p className="subtitle">{diagram.description}</p> : null}
         <div className="viewer">
-          {diagram.html ? (
-            <div
-              className="mermaid"
-              dangerouslySetInnerHTML={{ __html: sanitizeStoredHtml(diagram.html) }}
-            />
-          ) : diagram.mermaid ? (
-            <MermaidViewer id={`diagram-${hash}`} source={diagram.mermaid} />
+          {content ? (
+            <ShareViewer hash={hash} kind={kind} content={content} />
           ) : (
             <p className="error">Stored payload is empty.</p>
           )}
         </div>
       </section>
-
-      {diagram.mermaid ? (
-        <section className="card">
-          <h2>Source</h2>
-          <pre className="code">{diagram.mermaid}</pre>
-        </section>
-      ) : null}
     </main>
   );
 }

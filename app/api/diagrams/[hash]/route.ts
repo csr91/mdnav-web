@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { peekDiagram, putDiagram, sanitizeHash, type DiagramRecordInput } from "@/lib/storage";
+import {
+  normalizeShareInput,
+  peekDiagram,
+  putDiagram,
+  sanitizeHash,
+  type DiagramRecordInput
+} from "@/lib/storage";
 
 function unauthorized() {
   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -47,11 +53,19 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ha
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  if (!body?.mermaid?.trim() && !body?.html?.trim()) {
+  if (!normalizeShareInput(body)) {
     return NextResponse.json({ error: "missing_payload" }, { status: 400 });
   }
 
-  const stored = await putDiagram(safeHash, body);
+  let stored;
+  try {
+    stored = await putDiagram(safeHash, body);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "invalid_payload";
+    const status = message === "Content too large" ? 413 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+
   return NextResponse.json({
     ok: true,
     hash: safeHash,
