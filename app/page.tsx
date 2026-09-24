@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import TerminalDemo from "@/components/TerminalDemo";
 import FeatureGrid from "@/components/FeatureGrid";
+import Navbar from "@/components/Navbar";
+
+const CV_URL = "https://cesarmendoza.vercel.app/";
 
 const content = {
   en: {
@@ -12,7 +15,7 @@ const content = {
     cta: { primary: "Get started", secondary: "Documentation →" },
     featuresLabel: "Features",
     installLabel: "Install",
-    nav: { hero: "Overview", features: "Features", install: "Install" },
+    nav: { hero: "Overview", features: "Features", install: "Install", docs: "Docs" },
     features: [
       { icon: "⌨", label: "Keyboard first",    title: "No mouse. No friction.",       desc: "Navigate any directory with hjkl, jump between panels with Tab, and run any action from the command palette with :. Fully keyboard-driven." },
       { icon: "◫", label: "Instant preview",   title: "See files as you move.",       desc: "The right panel updates as you navigate. Markdown is rendered, code is syntax-highlighted, Mermaid diagrams are detected automatically." },
@@ -33,7 +36,7 @@ const content = {
     cta: { primary: "Empezar", secondary: "Documentación →" },
     featuresLabel: "Funcionalidades",
     installLabel: "Instalación",
-    nav: { hero: "Inicio", features: "Funciones", install: "Instalar" },
+    nav: { hero: "Inicio", features: "Funciones", install: "Instalar", docs: "Docs" },
     features: [
       { icon: "⌨", label: "Teclado primero",   title: "Sin mouse. Sin fricción.",        desc: "Navegá cualquier directorio con hjkl, cambiá de panel con Tab y ejecutá cualquier acción desde el command palette con :." },
       { icon: "◫", label: "Preview instant.",   title: "Ves los archivos al moverse.",    desc: "El panel derecho se actualiza en tiempo real. Markdown renderizado, código con syntax highlighting, Mermaid detectado automáticamente." },
@@ -131,31 +134,24 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ── Sidebar ──────────────────────────────────────── */}
-      <nav className="lp-nav">
-        {NAV_SECTIONS.map(s => (
-          <a key={s.id} href={`#${s.id}`} className={`lp-nav-item${active === s.id ? " active" : ""}`}>
-            <span className="lp-nav-sq" />
-            {t.nav[s.labelKey]}
-          </a>
-        ))}
-      </nav>
+      <Navbar
+        links={[
+          { href: "#features", label: t.nav.features, id: "features" },
+          { href: "#install",  label: t.nav.install,  id: "install" },
+          { href: "/devs",     label: t.nav.docs },
+        ]}
+        active={active}
+        version={version}
+        lang={lang}
+        onLangChange={toggle}
+      />
 
       {/* ── Main shell ───────────────────────────────────── */}
       <main className="shell">
 
-        {/* Lang toggle */}
-        <div className="lang-toggle">
-          <button className={`lang-btn${lang === "en" ? " active" : ""}`} onClick={() => toggle("en")}>EN</button>
-          <button className={`lang-btn${lang === "es" ? " active" : ""}`} onClick={() => toggle("es")}>ES</button>
-        </div>
-
-        {/* Version label */}
-        <span className="shell-version">{version}</span>
-
         {/* Hero */}
         <section id="hero" className="hero">
-          <h1 className="title title-gradient">mdnav</h1>
+          <h1 className="title title-accent">mdnav</h1>
           <p className="subtitle">{t.subtitle}</p>
           <div className="cta-row">
             <Link href="/devs#install" className="btn-primary">{t.cta.primary}</Link>
@@ -227,13 +223,11 @@ export default function HomePage() {
         {/* Footer */}
         <footer className="site-footer">
           <span>
-            A{" "}
-            <a href="https://kaizenlab-mauve.vercel.app/" target="_blank" rel="noopener noreferrer">
-              KaizenLab
-            </a>{" "}
-            open source project
+            Created by{" "}
+            <a href={CV_URL} target="_blank" rel="noopener noreferrer">
+              Cesar Mendoza
+            </a>
           </span>
-          <span>Created by Cesar Mendoza</span>
         </footer>
 
       </main>
